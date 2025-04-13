@@ -1,5 +1,7 @@
 # k8ops - Kubernetes Operations Tools
 
+[![Publish Python Package to PyPI](https://github.com/nomagicln/k8ops/actions/workflows/publish-to-pypi.yml/badge.svg?branch=main)](https://github.com/nomagicln/k8ops/actions/workflows/publish-to-pypi.yml)
+
 A collection of tools to help with Kubernetes cluster operations and management.
 
 ## Installation
