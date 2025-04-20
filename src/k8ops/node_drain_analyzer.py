@@ -378,7 +378,7 @@ class NodeList:
         return len(self.items)
 
 
-def node_selector_matches(node_selector: dict, node: Node) -> bool:
+def node_selector_matches(node_selector: Dict[str, str], node: Node) -> bool:
     """Check if node selector matches node labels"""
     for key, value in node_selector.items():
         if key not in node.labels or node.labels[key] != value:
@@ -386,7 +386,7 @@ def node_selector_matches(node_selector: dict, node: Node) -> bool:
     return True
 
 
-def node_selector_matches_node_list(node_selector: dict, node_list: NodeList) -> bool:
+def node_selector_matches_node_list(node_selector: Dict[str, str], node_list: NodeList) -> bool:
     """Check if node selector matches any node in the node list"""
     for node in node_list.items:
         if node_selector_matches(node_selector, node):
@@ -482,6 +482,37 @@ def parse_storage(memory_str: str) -> int:
         return int(int(memory_str) / (1024 * 1024))  # Convert to MiB
     except ValueError:
         logger.error(f"Unable to parse memory value: {memory_str}")
+        return 0
+
+
+def parse_pod_count(pod_count_str: str) -> int:
+    """
+    Parse pod count resource value and convert it to an integer
+
+    Examples:
+    - "100" -> 100
+    - "1" -> 1
+    - "1k" -> 1000
+    """
+    if not pod_count_str:
+        return 0
+
+    if isinstance(pod_count_str, int):
+        return pod_count_str
+
+    pod_count_str = str(pod_count_str)
+
+    if pod_count_str.endswith("k"):
+        try:
+            return int(float(pod_count_str[:-1]) * 1000)
+        except ValueError:
+            logger.error(f"Unable to parse Pod count value: {pod_count_str}")
+            return 0
+
+    try:
+        return int(pod_count_str)
+    except ValueError:
+        logger.error(f"Unable to parse Pod count value: {pod_count_str}")
         return 0
 
 
@@ -593,13 +624,13 @@ def collect_node_list() -> NodeList:
             cpu=int(node["status"]["allocatable"].get("cpu", 0)) * 1000,  # Convert to millicores
             ephemeralStorage=int(parse_storage(node["status"]["allocatable"].get("ephemeral-storage", 0))),
             memory=int(parse_storage(node["status"]["allocatable"].get("memory", 0))),
-            pods=int(node["status"]["allocatable"].get("pods", 0)),
+            pods=parse_pod_count(node["status"]["allocatable"].get("pods", 0)),
         )
         capacity = NodeResource(
             cpu=int(node["status"]["capacity"].get("cpu", 0)) * 1000,  # Convert to millicores
             ephemeralStorage=int(parse_storage(node["status"]["capacity"].get("ephemeral-storage", 0))),
             memory=int(parse_storage(node["status"]["capacity"].get("memory", 0))),
-            pods=int(node["status"]["capacity"].get("pods", 0)),
+            pods=parse_pod_count(node["status"]["capacity"].get("pods", 0)),
         )
         taints = TaintList(
             items=[
@@ -844,14 +875,14 @@ class Reporter:
 
 def group_pods_by_namespace(pod_list: List[Pod]) -> str:
     """Group pods by their namespace and return a formatted string"""
-    namespace_dict = {}
+    namespace_dict: Dict[str, List[str]] = {}
     for pod in pod_list:
         namespace = pod.namespace
         if namespace not in namespace_dict:
             namespace_dict[namespace] = []
         namespace_dict[namespace].append(pod.name)
 
-    grouped_info = []
+    grouped_info: List[str] = []
     for namespace, pods in namespace_dict.items():
         grouped_info.append(f"{namespace} ({', '.join(pods)})")
 
