@@ -18,91 +18,84 @@ Or using uv:
 uv pip install k8ops
 ```
 
-Alternatively, you can download and use the standalone scripts directly from the repository.
+## Requirements
 
-## Node Drain Analyzer
-
-The Node Drain Analyzer is a tool that helps you assess the impact and risk of draining nodes in your Kubernetes cluster. It analyzes various factors such as resource usage, pod placement constraints, and node characteristics to provide insights into potential issues that might arise when draining specific nodes.
-
-### Features
-
-- Comprehensive analysis of node drain impact
-- Resource usage evaluation (CPU, memory, pods)
-- Detection of scheduling constraints (taints, tolerations, node selectors)
-- Architecture and operating system compatibility checks
-- Detailed reporting with severity levels
-- Multiple output formats (table, JSON, CSV)
-
-### Requirements
-
-- Python 3.6+
+- Python 3.7+
 - `kubectl` configured with access to your Kubernetes cluster
-- Required Python packages (standard library)
 
-### Usage
+## Features
 
-If installed via pip:
+### Node Summary
 
-```bash
-node-drain-analyzer [options] [node_names...]
-```
-
-If using the standalone script:
+The node summary command provides detailed information about cluster nodes:
 
 ```bash
-python node-drain-analyzer [options] [node_names...]
+k8ops cluster summary [options] [node_names...]
 ```
 
 #### Options
 
 - `--wide`: Show wide output with additional columns
-- `--output`, `-o`: Output destination (default: stdout)
-- `--verbose`, `-v`: Enable verbose output
-- `--images`: Show images information
-- `--pods`: Show pods information
-- `--taints`: Show taints information
-- `--metrics`: Show metrics information
-- `--factor`: The factor for resource calculations (default: 1.5)
+- `--pods`: Show pods running on each node
+- `--images`: Show container images on each node
+- `--taints`: Show node taints
+- `--labels`: Show node labels
+- `--annotations`: Show node annotations
+- `--capacity`: Show node capacity
+- `--allocatable`: Show node allocatable resources
+- `--conditions`: Show node conditions
+- `--addresses`: Show node addresses
+- `--metrics`: Show node metrics
+- `--all`: Show all information
 
-#### Examples
+### Node Drain Analyzer
 
-Analyze the impact of draining a single node:
-
-```bash
-node-drain-analyzer node-1
-```
-
-Analyze multiple nodes with verbose output:
+The node drain analyzer helps assess the impact and risks of draining nodes from your Kubernetes cluster:
 
 ```bash
-node-drain-analyzer -v node-1 node-2
+k8ops cluster drain [options] <node_names...>
 ```
 
-Show detailed information including pods and taints:
+#### Features
 
-```bash
-node-drain-analyzer --pods --taints node-1
-```
+- Comprehensive drain impact analysis:
+  - Resource usage evaluation (CPU, memory, pods)
+  - Pod scheduling constraints check
+  - Architecture and OS compatibility verification
+  - Taint and toleration validation
+  - DaemonSet impact assessment
+  - Running jobs/cronjobs detection
+  - Node selector and affinity rules check
+  - Resource availability calculation
 
-Save analysis to a file:
+#### Options
 
-```bash
-node-drain-analyzer -o analysis.txt node-1
-```
+All options from the summary command are supported, plus:
 
-### How It Works
+- `--factor`: The factor for resource calculations when pods have no requests set (default: 1.5)
 
-1. Collects information about all nodes and pods in the cluster
-2. Simulates removing the specified nodes
-3. Analyzes the impact on the remaining nodes
-4. Checks for potential issues like:
-   - Resource constraints
-   - Pod scheduling constraints
-   - Architecture/OS compatibility
+#### Analysis Details
+
+The analyzer checks for various potential issues:
+
+1. **Resource Constraints**
+   - CPU and memory availability on remaining nodes
+   - Pod capacity limits
+   - Resource distribution impact
+
+2. **Scheduling Constraints**
+   - Node selectors compatibility
+   - Affinity/anti-affinity rules
    - Taints and tolerations
-5. Generates a report with severity levels for identified issues
+   - Architecture/OS compatibility
 
-### Severity Levels
+3. **Workload Impact**
+   - DaemonSet pods
+   - Running jobs/cronjobs
+   - Pods with no controllers
+   - Pod density changes
+
+#### Severity Levels
 
 - **High**: Critical issues that will likely prevent successful node draining
 - **Medium**: Significant issues that may cause problems
